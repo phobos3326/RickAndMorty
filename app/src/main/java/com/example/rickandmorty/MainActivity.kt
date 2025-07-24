@@ -89,8 +89,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.paging.LoadState
 import androidx.paging.compose.collectAsLazyPagingItems
+import com.example.rickandmorty.data.CharacterEntity
 import com.example.rickandmorty.ui.ViewModel
-
 
 
 @AndroidEntryPoint
@@ -114,92 +114,78 @@ class MainActivity : ComponentActivity() {
     }
 
 
+    @OptIn(ExperimentalMaterial3Api::class)
+    @Composable
+    fun UserListScreen(navController: NavController, viewModel: ViewModel = hiltViewModel()) {
+        val lazyPagingItems = viewModel.users.collectAsLazyPagingItems()
+        val context = LocalContext.current
+        val snackHost = remember { SnackbarHostState() }
 
 
 
+        Scaffold(
+            snackbarHost = { SnackbarHost(snackHost) },
+            topBar = {
+                TopAppBar(
+                    title = { Text(stringResource(R.string.users)) },
+                    navigationIcon = {
+                        IconButton(onClick = { navController.popBackStack() }) {
+                            Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                        }
+                    }
+                )
+            },
+            floatingActionButton = {
+                FloatingActionButton(onClick = { lazyPagingItems.refresh() }) {
+                    Icon(Icons.Default.Refresh, contentDescription = null)
+                }
+            }
+        ) { paddingValues ->
 
+            LazyVerticalGrid(
+                columns = GridCells.Fixed(2),
+                modifier = Modifier.padding(paddingValues)) {
+                items(lazyPagingItems.itemCount) { index ->
 
+                    val user = lazyPagingItems[index]
 
+                    if (user != null) {
+                        ListItem(
 
-             @OptIn(ExperimentalMaterial3Api::class)
-             @Composable
-             fun UserListScreen(navController: NavController, viewModel: ViewModel = hiltViewModel()) {
-                 val lazyPagingItems = viewModel.users.collectAsLazyPagingItems()
-                 val context = LocalContext.current
-                 val snackHost = remember { SnackbarHostState() }
+                            { CharacterCard(user) },
+                            modifier = Modifier.clickable {
+                                navController.navigate("detail/${user.id}")
+                            }
+                        )
 
+                    }
+                }
 
+                lazyPagingItems.apply {
+                    when (loadState.append) {
+                        is LoadState.Loading -> {
+                            item {
+                                CircularProgressIndicator(modifier = Modifier.padding(16.dp))
+                            }
+                        }
 
-                 Scaffold(
-                     snackbarHost = { SnackbarHost(snackHost) },
-                     topBar = {
-                         TopAppBar(
-                             title = { Text(stringResource(R.string.users)) },
-                             navigationIcon = {
-                                 IconButton(onClick = { navController.popBackStack() }) {
-                                     Icon(Icons.Default.ArrowBack, contentDescription = "Back")
-                                 }
-                             }
-                         )
-                     },
-                     floatingActionButton = {
-                         FloatingActionButton(onClick = { lazyPagingItems.refresh() }) {
-                             Icon(Icons.Default.Refresh, contentDescription = null)
-                         }
-                     }
-                 ) { paddingValues ->
+                        is LoadState.Error -> {
+                            val e = loadState.append as LoadState.Error
+                            item {
+                                Text(
+                                    "Ошибка загрузки: ${e.error.localizedMessage}",
+                                    color = MaterialTheme.colorScheme.error,
+                                    modifier = Modifier.padding(16.dp)
+                                )
+                            }
+                        }
 
-                     LazyColumn(modifier = Modifier.padding(paddingValues)) {
-                         items(lazyPagingItems.itemCount) { index ->
-
-                             val user = lazyPagingItems[index]
-
-                             if (user != null) {
-                                 ListItem(
-
-                                     headlineContent = { Text(user.name) },
-                                     supportingContent = { Text(user.originName) },
-
-                                     leadingContent = {
-                                         Image(
-                                             painter = rememberAsyncImagePainter(user.image),
-                                             contentDescription = null,
-                                             modifier = Modifier
-                                                 .size(48.dp)
-                                                 .clip(CircleShape)
-                                         )
-                                     },
-                                     modifier = Modifier.clickable {
-                                         navController.navigate("detail/${user.id}")
-                                     }
-                                 )
-                                 Divider()
-                             }
-                         }
-
-                         lazyPagingItems.apply {
-                             when (loadState.append) {
-                                 is LoadState.Loading -> {
-                                     item {
-                                         CircularProgressIndicator(modifier = Modifier.padding(16.dp))
-                                     }
-                                 }
-                                 is LoadState.Error -> {
-                                     val e = loadState.append as LoadState.Error
-                                     item {
-                                         Text(
-                                             "Ошибка загрузки: ${e.error.localizedMessage}",
-                                             color = MaterialTheme.colorScheme.error,
-                                             modifier = Modifier.padding(16.dp)
-                                         )
-                                     }
-                                 }
-                                 else -> {}
-                             }
-                         }
-                     }
-                 }
-             }
+                        else -> {}
+                    }
+                }
+            }
+        }
+    }
 
     @Composable
     fun AppNav(modifier: Modifier = Modifier) {
@@ -209,7 +195,7 @@ class MainActivity : ComponentActivity() {
             composable("list") { UserListScreen(navController) }
             composable("detail/{userId}") { backStackEntry ->
                 val id = backStackEntry.arguments?.getString("userId") ?: return@composable
-                UserDetailScreen(id, viewModel, navController )
+                UserDetailScreen(id, viewModel, navController)
             }
         }
     }
@@ -282,13 +268,13 @@ class MainActivity : ComponentActivity() {
                     elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
                 ) {
                     Column(modifier = Modifier.padding(16.dp)) {
-                        Text(stringResource(R.string.contact_info), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                        Text(
+                            stringResource(R.string.contact_info),
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.SemiBold
+                        )
 
                         Spacer(modifier = Modifier.height(12.dp))
-
-
-
-
 
 
                     }
@@ -303,83 +289,88 @@ class MainActivity : ComponentActivity() {
                     elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
                 ) {
                     Column(modifier = Modifier.padding(16.dp)) {
-                        Text(stringResource(R.string.address), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                        Text(
+                            stringResource(R.string.address),
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.SemiBold
+                        )
 
                         Spacer(modifier = Modifier.height(12.dp))
 
 
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(
-                                text = "${user!!.name}, ${user!!.originName}," +
-                                       "${user!!.species}, ${user!!.status}",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.primary
-                            )
-                        }
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "${user!!.name}, ${user!!.originName}," +
+                                    "${user!!.species}, ${user!!.status}",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.primary
+                        )
                     }
                 }
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // Additional info card
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth(0.9f),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
-                ) {
-                    Column(modifier = Modifier.padding(16.dp)) {
-                        Text(stringResource(R.string.more_info), style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.SemiBold)
-
-                        Spacer(modifier = Modifier.height(12.dp))
-
-                        InfoRow(label = stringResource(R.string.gender), value = user!!.gender)
-                        /*InfoRow(label = stringResource(R.string.age), value = user!!.dobAge.toString())
-                        InfoRow(label = stringResource(R.string.date_of_birth), value = user!!.dobDate)
-                        InfoRow(label = stringResource(R.string.date_of_registration), value = user!!.registeredDate)
-                        InfoRow(label = stringResource(R.string.time_zone), value = "${user!!.timezoneOffset} (${user!!.timezoneDescription})")
-                        InfoRow(label = stringResource(R.string.id), value = "${user!!.idName ?: "-"} - ${user!!.idValue ?: "-"}")
-                        InfoRow(label = stringResource(R.string.nationality), value = user!!.nat)
-                        InfoRow(label = stringResource(R.string.coordinates), value = "${user!!.latitude}, ${user!!.longitude}")*/
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(30.dp))
             }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Additional info card
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth(0.9f),
+                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text(
+                        stringResource(R.string.more_info),
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold
+                    )
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    InfoRow(label = stringResource(R.string.gender), value = user!!.gender)
+                    /*InfoRow(label = stringResource(R.string.age), value = user!!.dobAge.toString())
+                    InfoRow(label = stringResource(R.string.date_of_birth), value = user!!.dobDate)
+                    InfoRow(label = stringResource(R.string.date_of_registration), value = user!!.registeredDate)
+                    InfoRow(label = stringResource(R.string.time_zone), value = "${user!!.timezoneOffset} (${user!!.timezoneDescription})")
+                    InfoRow(label = stringResource(R.string.id), value = "${user!!.idName ?: "-"} - ${user!!.idValue ?: "-"}")
+                    InfoRow(label = stringResource(R.string.nationality), value = user!!.nat)
+                    InfoRow(label = stringResource(R.string.coordinates), value = "${user!!.latitude}, ${user!!.longitude}")*/
+                }
+            }
+
+            Spacer(modifier = Modifier.height(30.dp))
         }
     }
-
-
-
-
-    @Composable
-    fun InfoRow(
-        icon: ImageVector? = null,
-        label: String,
-        value: String,
-        onClick: (() -> Unit)? = null
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .let {
-                    if (onClick != null) it.clickable { onClick() } else it
-                }
-                .padding(vertical = 6.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            if (icon != null) {
-                Icon(icon, contentDescription = label, tint = MaterialTheme.colorScheme.primary)
-                Spacer(modifier = Modifier.width(12.dp))
-            }
-            Text(text = "$label:", fontWeight = FontWeight.Medium, modifier = Modifier.width(110.dp))
-            Text(text = value, style = MaterialTheme.typography.bodyMedium)
-        }
-    }
+}
 
 
 @Composable
-fun CharacterCard(character: Character) {
+fun InfoRow(
+    icon: ImageVector? = null,
+    label: String,
+    value: String,
+    onClick: (() -> Unit)? = null
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .let {
+                if (onClick != null) it.clickable { onClick() } else it
+            }
+            .padding(vertical = 6.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        if (icon != null) {
+            Icon(icon, contentDescription = label, tint = MaterialTheme.colorScheme.primary)
+            Spacer(modifier = Modifier.width(12.dp))
+        }
+        Text(text = "$label:", fontWeight = FontWeight.Medium, modifier = Modifier.width(110.dp))
+        Text(text = value, style = MaterialTheme.typography.bodyMedium)
+    }
+}
+
+
+@Composable
+fun CharacterCard(character: CharacterEntity?) {
     Card(
         modifier = Modifier
             .width(180.dp)
@@ -390,11 +381,11 @@ fun CharacterCard(character: Character) {
         Box {
             Column {
 
-                Box(){
+                Box() {
 
                     Image(
-                        painter = rememberAsyncImagePainter(character.image),
-                        contentDescription = character.name,
+                        painter = rememberAsyncImagePainter(character?.image),
+                        contentDescription = character?.name,
                         contentScale = ContentScale.Crop,
                         modifier = Modifier
                             .fillMaxWidth()
@@ -415,17 +406,16 @@ fun CharacterCard(character: Character) {
                                 modifier = Modifier
                                     .size(8.dp)
                                     .clip(CircleShape)
-                                    .background(if (character.status == "Alive") Color.Green else Color.Red)
+                                    .background(if (character?.status == "Alive") Color.Green else Color.Red)
                             )
                             Spacer(modifier = Modifier.width(4.dp))
                             Text(
-                                text = character.status,
+                                text = character!!.status,
                                 color = Color.White,
                                 fontSize = 12.sp
                             )
                         }
                     }
-
 
 
                 }
@@ -439,14 +429,14 @@ fun CharacterCard(character: Character) {
                 ) {
                     Column {
                         Text(
-                            text = character.name,
+                            text = character!!.name,
                             color = Color.White,
                             fontWeight = FontWeight.Bold,
                             fontSize = 16.sp
                         )
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
-                            text = "${character.gender} | ${character.species}",
+                            text = "${character?.gender} | ${character?.species}",
                             color = Color.LightGray,
                             fontSize = 13.sp
                         )
@@ -461,7 +451,7 @@ fun CharacterCard(character: Character) {
 }
 
 
-@OptIn(ExperimentalMaterial3Api::class)
+/*@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CharacterScreen(characters: List<Character>) {
     var searchQuery by remember { mutableStateOf("") }
@@ -498,8 +488,8 @@ fun CharacterScreen(characters: List<Character>) {
                 CharacterCard(character)
             }
         }
-    }
-}
+    }*/
+
 
 
 data class Character(
@@ -512,51 +502,51 @@ data class Character(
 
 @Preview(showBackground = true)
 @Composable
-fun GreetingPreview()  {
-        val characters = listOf(
-            Character(
-                name = "Rick Sanchez",
-                gender = "Male",
-                species = "Human",
-                status = "Alive",
-                image = "https://rickandmortyapi.com/api/character/avatar/1.jpeg"
-            ),
-            Character(
-                name = "Morty Smith",
-                gender = "Male",
-                species = "Human",
-                status = "Alive",
-                image = "https://rickandmortyapi.com/api/character/avatar/2.jpeg"
-            ),
-            Character(
-                name = "Summer Smith",
-                gender = "Female",
-                species = "Human",
-                status = "Alive",
-                image = "https://rickandmortyapi.com/api/character/avatar/3.jpeg"
-            ),
-            Character(
-                name = "Beth Smith",
-                gender = "Female",
-                species = "Human",
-                status = "Alive",
-                image = "https://rickandmortyapi.com/api/character/avatar/4.jpeg"
-            ),
-            Character(
-                name = "Jerry Smith",
-                gender = "Male",
-                species = "Human",
-                status = "Alive",
-                image = "https://rickandmortyapi.com/api/character/avatar/5.jpeg"
-            ),
-            Character(
-                name = "Abadango Cluster",
-                gender = "Female",
-                species = "Alien",
-                status = "Alive",
-                image = "https://rickandmortyapi.com/api/character/avatar/6.jpeg"
-            )
+fun GreetingPreview() {
+    val characters = listOf(
+        Character(
+            name = "Rick Sanchez",
+            gender = "Male",
+            species = "Human",
+            status = "Alive",
+            image = "https://rickandmortyapi.com/api/character/avatar/1.jpeg"
+        ),
+        Character(
+            name = "Morty Smith",
+            gender = "Male",
+            species = "Human",
+            status = "Alive",
+            image = "https://rickandmortyapi.com/api/character/avatar/2.jpeg"
+        ),
+        Character(
+            name = "Summer Smith",
+            gender = "Female",
+            species = "Human",
+            status = "Alive",
+            image = "https://rickandmortyapi.com/api/character/avatar/3.jpeg"
+        ),
+        Character(
+            name = "Beth Smith",
+            gender = "Female",
+            species = "Human",
+            status = "Alive",
+            image = "https://rickandmortyapi.com/api/character/avatar/4.jpeg"
+        ),
+        Character(
+            name = "Jerry Smith",
+            gender = "Male",
+            species = "Human",
+            status = "Alive",
+            image = "https://rickandmortyapi.com/api/character/avatar/5.jpeg"
+        ),
+        Character(
+            name = "Abadango Cluster",
+            gender = "Female",
+            species = "Alien",
+            status = "Alive",
+            image = "https://rickandmortyapi.com/api/character/avatar/6.jpeg"
         )
+    )
 
-        CharacterScreen(characters)
-    }
+    // CharacterScreen(characters)
+}

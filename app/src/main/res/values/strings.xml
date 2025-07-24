@@ -1,0 +1,20 @@
+<resources>
+    <string name="app_name">RickAndMorty</string>
+    <string name="user_info">Данные пользователя</string>
+    <string name="users">Пользователи</string>
+    <string name="user_photo">User photo</string>
+    <string name="contact_info">Контактная информация</string>
+    <string name="phone">Телефон</string>
+    <string name="mobile">Мобильный</string>
+    <string name="tel">tel:%1$s</string>
+    <string name="address">Адрес</string>
+    <string name="more_info">Дополнительная информация</string>
+    <string name="gender">Пол</string>
+    <string name="age">Возраст</string>
+    <string name="date_of_birth">Дата рождения</string>
+    <string name="date_of_registration">Дата регистрации</string>
+    <string name="time_zone">Часовой пояс</string>
+    <string name="id">ID</string>
+    <string name="nationality">Национальность</string>
+    <string name="coordinates">Координаты</string>
+</resources>

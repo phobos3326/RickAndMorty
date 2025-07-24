@@ -7,20 +7,30 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.GridItemSpan
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 
 import androidx.compose.material.icons.Icons
@@ -29,6 +39,7 @@ import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -39,6 +50,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -66,7 +78,11 @@ import dagger.hilt.android.AndroidEntryPoint
 import androidx.core.net.toUri
 
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
@@ -101,85 +117,89 @@ class MainActivity : ComponentActivity() {
 
 
 
-    @OptIn(ExperimentalMaterial3Api::class)
-    @Composable
-    fun UserListScreen(navController: NavController, viewModel: ViewModel = hiltViewModel()) {
-        val lazyPagingItems = viewModel.users.collectAsLazyPagingItems()
-        val context = LocalContext.current
-        val snackHost = remember { SnackbarHostState() }
 
 
 
-        Scaffold(
-            snackbarHost = { SnackbarHost(snackHost) },
-            topBar = {
-                TopAppBar(
-                    title = { Text(stringResource(R.string.users)) },
-                    navigationIcon = {
-                        IconButton(onClick = { navController.popBackStack() }) {
-                            Icon(Icons.Default.ArrowBack, contentDescription = "Back")
-                        }
-                    }
-                )
-            },
-            floatingActionButton = {
-                FloatingActionButton(onClick = { lazyPagingItems.refresh() }) {
-                    Icon(Icons.Default.Refresh, contentDescription = null)
-                }
-            }
-        ) { paddingValues ->
 
-            LazyColumn(modifier = Modifier.padding(paddingValues)) {
-                items(lazyPagingItems.itemCount) { index ->
+             @OptIn(ExperimentalMaterial3Api::class)
+             @Composable
+             fun UserListScreen(navController: NavController, viewModel: ViewModel = hiltViewModel()) {
+                 val lazyPagingItems = viewModel.users.collectAsLazyPagingItems()
+                 val context = LocalContext.current
+                 val snackHost = remember { SnackbarHostState() }
 
-                    val user = lazyPagingItems[index]
 
-                    if (user != null) {
-                        ListItem(
 
-                            headlineContent = { Text(user.name) },
-                            supportingContent = { Text(user.originName) },
+                 Scaffold(
+                     snackbarHost = { SnackbarHost(snackHost) },
+                     topBar = {
+                         TopAppBar(
+                             title = { Text(stringResource(R.string.users)) },
+                             navigationIcon = {
+                                 IconButton(onClick = { navController.popBackStack() }) {
+                                     Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                                 }
+                             }
+                         )
+                     },
+                     floatingActionButton = {
+                         FloatingActionButton(onClick = { lazyPagingItems.refresh() }) {
+                             Icon(Icons.Default.Refresh, contentDescription = null)
+                         }
+                     }
+                 ) { paddingValues ->
 
-                            leadingContent = {
-                                Image(
-                                    painter = rememberAsyncImagePainter(user.image),
-                                    contentDescription = null,
-                                    modifier = Modifier
-                                        .size(48.dp)
-                                        .clip(CircleShape)
-                                )
-                            },
-                            modifier = Modifier.clickable {
-                                navController.navigate("detail/${user.id}")
-                            }
-                        )
-                        Divider()
-                    }
-                }
+                     LazyColumn(modifier = Modifier.padding(paddingValues)) {
+                         items(lazyPagingItems.itemCount) { index ->
 
-                lazyPagingItems.apply {
-                    when (loadState.append) {
-                        is LoadState.Loading -> {
-                            item {
-                                CircularProgressIndicator(modifier = Modifier.padding(16.dp))
-                            }
-                        }
-                        is LoadState.Error -> {
-                            val e = loadState.append as LoadState.Error
-                            item {
-                                Text(
-                                    "Ошибка загрузки: ${e.error.localizedMessage}",
-                                    color = MaterialTheme.colorScheme.error,
-                                    modifier = Modifier.padding(16.dp)
-                                )
-                            }
-                        }
-                        else -> {}
-                    }
-                }
-            }
-        }
-    }
+                             val user = lazyPagingItems[index]
+
+                             if (user != null) {
+                                 ListItem(
+
+                                     headlineContent = { Text(user.name) },
+                                     supportingContent = { Text(user.originName) },
+
+                                     leadingContent = {
+                                         Image(
+                                             painter = rememberAsyncImagePainter(user.image),
+                                             contentDescription = null,
+                                             modifier = Modifier
+                                                 .size(48.dp)
+                                                 .clip(CircleShape)
+                                         )
+                                     },
+                                     modifier = Modifier.clickable {
+                                         navController.navigate("detail/${user.id}")
+                                     }
+                                 )
+                                 Divider()
+                             }
+                         }
+
+                         lazyPagingItems.apply {
+                             when (loadState.append) {
+                                 is LoadState.Loading -> {
+                                     item {
+                                         CircularProgressIndicator(modifier = Modifier.padding(16.dp))
+                                     }
+                                 }
+                                 is LoadState.Error -> {
+                                     val e = loadState.append as LoadState.Error
+                                     item {
+                                         Text(
+                                             "Ошибка загрузки: ${e.error.localizedMessage}",
+                                             color = MaterialTheme.colorScheme.error,
+                                             modifier = Modifier.padding(16.dp)
+                                         )
+                                     }
+                                 }
+                                 else -> {}
+                             }
+                         }
+                     }
+                 }
+             }
 
     @Composable
     fun AppNav(modifier: Modifier = Modifier) {
@@ -358,11 +378,185 @@ class MainActivity : ComponentActivity() {
     }
 
 
-
-    @Preview(showBackground = true)
 @Composable
-fun GreetingPreview() {
-    ShiftTheme {
+fun CharacterCard(character: Character) {
+    Card(
+        modifier = Modifier
+            .width(180.dp)
+            .wrapContentHeight(),
+        shape = RoundedCornerShape(16.dp),
+        elevation = CardDefaults.cardElevation(4.dp)
+    ) {
+        Box {
+            Column {
 
+                Box(){
+
+                    Image(
+                        painter = rememberAsyncImagePainter(character.image),
+                        contentDescription = character.name,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(180.dp)
+                    )
+                    Box(
+                        modifier = Modifier
+                            .align(Alignment.BottomEnd)
+                            .padding(0.dp)
+                            .background(
+                                color = Color(0xFF2B2B2B),
+                                shape = RoundedCornerShape(topStart = 12.dp)
+                            )
+                            .padding(horizontal = 8.dp, vertical = 4.dp)
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Box(
+                                modifier = Modifier
+                                    .size(8.dp)
+                                    .clip(CircleShape)
+                                    .background(if (character.status == "Alive") Color.Green else Color.Red)
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(
+                                text = character.status,
+                                color = Color.White,
+                                fontSize = 12.sp
+                            )
+                        }
+                    }
+
+
+
+                }
+
+
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(Color(0xFF2B2B2B))
+                        .padding(vertical = 12.dp, horizontal = 8.dp)
+                ) {
+                    Column {
+                        Text(
+                            text = character.name,
+                            color = Color.White,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 16.sp
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = "${character.gender} | ${character.species}",
+                            color = Color.LightGray,
+                            fontSize = 13.sp
+                        )
+                    }
+                }
+            }
+
+            // Status badge
+
+        }
     }
 }
+
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun CharacterScreen(characters: List<Character>) {
+    var searchQuery by remember { mutableStateOf("") }
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color.White)
+            .padding(8.dp)
+    ) {
+        OutlinedTextField(
+            value = searchQuery,
+            onValueChange = { searchQuery = it },
+            label = { Text("Search characters") },
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 8.dp),
+            singleLine = true,
+            leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) }
+        )
+
+        val filtered = characters.filter {
+            it.name.contains(searchQuery, ignoreCase = true)
+        }
+
+        LazyVerticalGrid(
+            columns = GridCells.Fixed(2),
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(8.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            items(filtered) { character ->
+                CharacterCard(character)
+            }
+        }
+    }
+}
+
+
+data class Character(
+    val name: String,
+    val gender: String,
+    val species: String,
+    val status: String,
+    val image: String
+)
+
+@Preview(showBackground = true)
+@Composable
+fun GreetingPreview()  {
+        val characters = listOf(
+            Character(
+                name = "Rick Sanchez",
+                gender = "Male",
+                species = "Human",
+                status = "Alive",
+                image = "https://rickandmortyapi.com/api/character/avatar/1.jpeg"
+            ),
+            Character(
+                name = "Morty Smith",
+                gender = "Male",
+                species = "Human",
+                status = "Alive",
+                image = "https://rickandmortyapi.com/api/character/avatar/2.jpeg"
+            ),
+            Character(
+                name = "Summer Smith",
+                gender = "Female",
+                species = "Human",
+                status = "Alive",
+                image = "https://rickandmortyapi.com/api/character/avatar/3.jpeg"
+            ),
+            Character(
+                name = "Beth Smith",
+                gender = "Female",
+                species = "Human",
+                status = "Alive",
+                image = "https://rickandmortyapi.com/api/character/avatar/4.jpeg"
+            ),
+            Character(
+                name = "Jerry Smith",
+                gender = "Male",
+                species = "Human",
+                status = "Alive",
+                image = "https://rickandmortyapi.com/api/character/avatar/5.jpeg"
+            ),
+            Character(
+                name = "Abadango Cluster",
+                gender = "Female",
+                species = "Alien",
+                status = "Alive",
+                image = "https://rickandmortyapi.com/api/character/avatar/6.jpeg"
+            )
+        )
+
+        CharacterScreen(characters)
+    }
